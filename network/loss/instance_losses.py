@@ -7,7 +7,9 @@ def single_offset_regress_vec(pt_offsets, gt_offsets, valid):
     pt_diff = pt_offsets - gt_offsets   # (N, 3)
     pt_dist = torch.sum(torch.abs(pt_diff), dim=-1)   # (N)
     valid = valid.view(-1).float()
-    offset_norm_loss = torch.sum(pt_dist * valid) / (torch.sum(valid) + 1e-6)
+    offset_norm_loss = torch.sum(pt_dist * valid) / (torch.sum(valid))
+    if torch.sum(valid) == 0:
+        offset_norm_loss = torch.sum(valid) 
     return (offset_norm_loss, )
 
 def pairwise_distance(x: torch.Tensor, y=None):
@@ -18,13 +20,21 @@ def pairwise_distance(x: torch.Tensor, y=None):
             if y is not given then use 'y=x'.
     i.e. dist[i,j] = ||x[i,:]-y[j,:]||^2
     '''
-    x_norm = (x**2).sum(1).view(-1, 1)
     if y is not None:
-        y_norm = (y**2).sum(1).view(1, -1)
+        return NotImplementedError
     else:
-        y = x
+        dotp_matrix = torch.mm(x, torch.transpose(x, 0, 1))
+        x_norm = dotp_matrix.diagonal(0).reshape(-1, 1)
         y_norm = x_norm.view(1, -1)
-    dist = x_norm + y_norm - 2.0 * torch.mm(x, torch.transpose(y, 0, 1))
+    dist = x_norm + y_norm - 2.0 * dotp_matrix
+    # x_norm = (x**2).sum(1).view(-1, 1)
+    # if y is not None:
+    #     y_norm = (y**2).sum(1).view(1, -1)
+    # else:
+    #     y = x
+    #     y_norm = x_norm.view(1, -1)
+    # dist = x_norm + y_norm - 2.0 * torch.mm(x, torch.transpose(y, 0, 1))
+
     return dist
 
 def offset_loss_fun(single_offset_loss_fun):

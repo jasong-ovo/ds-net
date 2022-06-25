@@ -89,8 +89,8 @@ class PytorchMeanshift(nn.Module):
             D = torch.matmul(K, torch.ones([X.shape[0], 1]).cuda()).view(-1)
             _new_X = torch.matmul(XT, K) / D
             new_X_list.append(_new_X * weights[:, bandwidth_i].view(-1))
-        new_X = torch.sum(torch.stack(new_X_list), dim=0) / torch.sum(weights, dim=1).view(-1)
-        if torch.isnan(new_X.sum()):
+        new_X = torch.sum(torch.stack(new_X_list), dim=0) / (torch.sum(weights, dim=1).view(-1))
+        if torch.isnan(new_X.sum()) and global_cfg.LOCAL_RANK == 0:
             import pdb; pdb.set_trace()
         if self.data_mode == 'offset':
             return new_X.T, _weights
@@ -183,6 +183,8 @@ class PytorchMeanshift(nn.Module):
         bandwidth_weight_summary = []
         for batch_i in range(batch_size):
             X = sampled_embedding_[batch_i]
+            # if global_cfg.LOCAL_RANK == 0:
+            #     import pdb; pdb.set_trace()
             if X.shape[0] <= 1 and need_cluster:
                 ins_id_.append(np.zeros(valid_[batch_i].shape[0], dtype=np.int32))
                 loss_.append(torch.tensor(0.0, requires_grad=True).cuda())
@@ -198,7 +200,7 @@ class PytorchMeanshift(nn.Module):
             bandwidth_weight = None
             # fixed number of iteration
             if self.shift_mode in ['matrix_flat_kernel_bandwidth_weight']:
-                X_fea = batch['ins_fea_list'][batch_i][valid_[batch_i]][index_[batch_i]].reshape(-1, self.init_size)
+                X_fea = batch['ins_fea_list'][batch_i][valid_[batch_i]][index_[batch_i]].reshape(-1, self.init_size) # p torch.tensor([1, 2])[None].shape 在开头多加1维， (2, ) -> (1, 2)
             for iter_i in range(self.iteration):
                 if self.shift_mode == 'matrix_flat_kernel_bandwidth_weight':
                     new_X, bandwidth_weight = self.calc_shifted_matrix_flat_kernel_bandwidth_weight(X, X_fea, iter_i)
@@ -226,7 +228,7 @@ class PytorchMeanshift(nn.Module):
                     bandwidth_weight = bandwidth_weight.detach().cpu().numpy().reshape(-1, len(self.bandwidth))
                     bandwidth_weight_summary.append(np.concatenate([old_X.detach().cpu().numpy(), bandwidth_weight_softmax], axis=1))
 
-            bandwidth_weight_summary.append(np.concatenate([new_X.detach().cpu().numpy(), bandwidth_weight_softmax], axis=1))
+            bandwidth_weight_summary.append(np.concatenate([new_X.detach().cpu().numpy(), bandwidth_weight_softmax], axis=1)) # p bandwidth_weight_summary[-1][:, 3:]
             if self.data_mode == 'offset':
                 if self.meanshift_loss == 'offset':
                     loss = self.calc_loss_offset(iter_X_list, index_[batch_i], valid_[batch_i], batch_i, batch)
@@ -234,7 +236,7 @@ class PytorchMeanshift(nn.Module):
                     raise NotImplementedError
             else:
                 raise NotImplementedError
-            if torch.isnan(loss):
+            if torch.isnan(loss) and global_cfg.LOCAL_RANK == 0:
                 import pdb; pdb.set_trace()
             loss_.append(loss)
 

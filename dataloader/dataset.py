@@ -875,6 +875,7 @@ class spherical_dataset(data.Dataset):
         data_tuple = (voxel_position,processed_label)
 
         # center data on each voxel for PTnet
+        # 计算点在voxel中的相对位置
         voxel_centers = (grid_ind.astype(np.float32) + 0.5)*intervals + min_bound
         return_xyz = xyz_pol - voxel_centers #TODO: calculate relative coordinate using polar system?
         return_xyz = np.concatenate((return_xyz,xyz_pol,xyz[:,:2]),axis = 1)

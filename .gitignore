@@ -15,4 +15,8 @@ output
 lib/pointgroup_ops/build
 lib/Pointnet2/
 *.pth
+*.pkl
+output/train_backbone_slurm_dist/summary
+
+
 

@@ -126,7 +126,7 @@ class PanopticEval:
       y_inst_in_cl_mask = y_sem_row == cl
 
       # get instance points in class (makes outside stuff 0)
-      x_inst_in_cl = x_inst_row * x_inst_in_cl_mask.astype(np.int64)
+      x_inst_in_cl = x_inst_row * x_inst_in_cl_mask.astype(np.int64) # p np.unique(x_inst_row, return_counts=True)
       y_inst_in_cl = y_inst_row * y_inst_in_cl_mask.astype(np.int64)
 
       # generate the areas for each unique instance prediction

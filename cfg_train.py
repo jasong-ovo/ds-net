@@ -12,6 +12,7 @@ import torch.distributed as dist
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
+# print(torch.cuda.is_available())
 from utils import train_utils
 from utils import common_utils
 from utils.config import cfg_from_yaml_file, log_config_to_file, global_args, global_cfg
@@ -129,6 +130,7 @@ def PolarOffsetMain(args, cfg):
     if other_state is None:
         other_state = {}
 
+    import pdb;pdb.set_trace()
     ### create optimizer and scheduler
     lr_scheduler = None
     if lr_scheduler == None:
@@ -246,9 +248,11 @@ def PolarOffsetMain(args, cfg):
         loss_acc = 0
         if rank == 0:
             pbar = tqdm(total=len(train_dataset_loader), dynamic_ncols=True)
+        # debug evaluate part ##
         for i_iter, inputs in enumerate(train_dataset_loader):
             # torch.cuda.empty_cache()
             torch.autograd.set_detect_anomaly(True)
+            # import pdb; pdb.set_trace()
             model.train()
             optimizer.zero_grad()
             inputs['i_iter'] = i_iter
@@ -312,6 +316,7 @@ def PolarOffsetMain(args, cfg):
         ### evaluate after each epoch
         logger.info('----EPOCH {} Evaluating----'.format(epoch))
         model.eval()
+        # import pdb; pdb.set_trace()
         min_points = 50
         before_merge_evaluator = init_eval(min_points=min_points)
         after_merge_evaluator = init_eval(min_points=min_points)
@@ -411,5 +416,6 @@ def PolarOffsetMain(args, cfg):
             lr_scheduler.step(epoch) # new feature
 
 if __name__ =='__main__':
+    # import pdb; pdb.set_trace()
     args, cfg = global_args, global_cfg
     PolarOffsetMain(args, cfg)

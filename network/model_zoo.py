@@ -156,7 +156,7 @@ class PolarBaseClass(nn.Module):
         # concate everything
         cat_pt_ind = []
         for i_batch in range(len(xy_ind)):
-            cat_pt_ind.append(F.pad(xy_ind[i_batch],(1,0),'constant',value = i_batch))
+            cat_pt_ind.append(F.pad(xy_ind[i_batch],(1,0),'constant',value = i_batch)) # 左边扩充1列，右边扩充0列，标识pt_ind属于batch中哪一帧点云。
 
         cat_pt_fea = torch.cat(pt_fea,dim = 0)
         cat_pt_ind = torch.cat(cat_pt_ind,dim = 0)
@@ -209,6 +209,7 @@ class PolarBaseClass(nn.Module):
 
         if self.pt_pooling == 'max':
             pooled_data = torch_scatter.scatter_max(processed_cat_pt_fea, unq_inv, dim=0)[0] # choose the max feature for each grid
+            # torch_scatter.scatter_max(torch.tensor([[1, 2], [2, 1]]).to(cur_dev), torch.tensor(0).to(cur_dev), dim=0)
         else: raise NotImplementedError
 
         if self.fea_compre:
